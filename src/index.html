@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro Pessoal</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Gerencie suas despesas de forma simples e eficiente">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Controle Financeiro">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon e Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .status-pago {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-pendente {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .chart-container {
+            height: 300px;
+        }
+        
+        /* PWA Install Banner */
+        .install-prompt { 
+            display: none; 
+        }
+        
+        .install-prompt.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- PWA Install Banner -->
+    <div id="installBanner" class="install-prompt bg-indigo-600 text-white p-3 text-center shadow-lg">
+        <div class="flex items-center justify-between max-w-md mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-mobile-alt mr-2"></i>
+                <span class="text-sm font-medium">Instalar como App</span>
+            </div>
+            <div class="flex space-x-2">
+                <button id="installBtn" class="bg-white text-indigo-600 px-3 py-1 rounded text-sm font-medium hover:bg-gray-100 transition-colors">
+                    Instalar
+                </button>
+                <button id="dismissBtn" class="text-white hover:text-gray-200 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Cabeçalho -->
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-indigo-700">Controle Financeiro Pessoal</h1>
+                    <p class="text-gray-600">Gerencie suas despesas de forma simples e eficiente</p>
+                </div>
+                <div class="flex space-x-2">
+                    <!-- Notification Button -->
+                    <button id="notificationBtn" class="p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow" title="Ativar Notificações">
+                        <i class="fas fa-bell text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Formulário de lançamento -->
+            <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-indigo-600">Nova Despesa</h2>
+                <form id="expenseForm" class="space-y-4">
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Descrição</label>
+                        <input type="text" id="description" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                        <input type="number" id="amount" step="0.01" min="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    
+                    <div>
+                        <label for="dueDate" class="block text-sm font-medium text-gray-700">Data de Vencimento</label>
+                        <input type="date" id="dueDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <div class="mt-1 flex space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="status" value="pago" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-gray-700">Pago</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="status" value="pendente" checked class="h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                                <span class="ml-2 text-gray-700">Pendente</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                        <i class="fas fa-plus mr-2"></i> Adicionar Despesa
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Resumo e lista de despesas -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Resumo financeiro -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg shadow-md p-4">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Total Pendente</p>
+                                <p class="text-xl font-semibold text-gray-900" id="totalPending">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-4">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Total Pago</p>
+                                <p class="text-xl font-semibold text-gray-900" id="totalPaid">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-4">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Atrasadas</p>
+                                <p class="text-xl font-semibold text-gray-900" id="overdueExpenses">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-4">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Ainda Vai Vencer</p>
+                                <p class="text-xl font-semibold text-gray-900" id="pendingExpenses">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filtros e busca -->
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                        <div class="flex-1">
+                            <label for="search" class="sr-only">Buscar</label>
+                            <div class="relative rounded-md shadow-sm">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" id="search" placeholder="Buscar despesas..." class="block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <select id="statusFilter" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                                <option value="todos">Todos</option>
+                                <option value="pago">Pago</option>
+                                <option value="pendente">Pendente</option>
+                            </select>
+                            
+                            <select id="monthFilter" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                                <option value="todos">Todos os meses</option>
+                                <option value="atual">Mês atual</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lista de despesas -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Minhas Despesas</h3>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div id="expensesList" class="divide-y divide-gray-200">
+                            <!-- Despesas serão adicionadas aqui dinamicamente -->
+                            <div class="p-4 text-center text-gray-500">
+                                Nenhuma despesa cadastrada ainda.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container para PWA -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // PWA Install Logic
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const dismissBtn = document.getElementById('dismissBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.classList.remove('show');
+            }
+        });
+
+        dismissBtn.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+        });
+
+        // Notification Permission
+        document.getElementById('notificationBtn').addEventListener('click', async () => {
+            if ('Notification' in window) {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    new Notification('Controle Financeiro', {
+                        body: 'Notificações ativadas! Você receberá lembretes de vencimentos.',
+                        icon: '/assets/icons/icon-192x192.png'
+                    });
+                    showFeedback('Notificações ativadas!', 'green-500', 'fa-check-circle');
+                } else {
+                    showFeedback('Notificações negadas', 'red-500', 'fa-exclamation-circle');
+                }
+            }
+        });
+
+        // CÓDIGO ORIGINAL - FUNCIONAL - EXATAMENTE COMO ESTAVA
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa o armazenamento local se não existir
+            if (!localStorage.getItem('expenses')) {
+                localStorage.setItem('expenses', JSON.stringify([]));
+            }
+            
+            // Carrega as despesas do armazenamento local
+            let expenses = JSON.parse(localStorage.getItem('expenses'));
+            
+            // Elementos do DOM
+            const expenseForm = document.getElementById('expenseForm');
+            const expensesList = document.getElementById('expensesList');
+            const searchInput = document.getElementById('search');
+            const statusFilter = document.getElementById('statusFilter');
+            const monthFilter = document.getElementById('monthFilter');
+            const totalPendingElement = document.getElementById('totalPending');
+            const totalPaidElement = document.getElementById('totalPaid');
+            
+            // Atualiza a interface
+            updateUI();
+            
+            // Adiciona ou edita uma despesa
+            expenseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const description = document.getElementById('description').value;
+                const amount = parseFloat(document.getElementById('amount').value);
+                const dueDate = document.getElementById('dueDate').value;
+                const status = document.querySelector('input[name="status"]:checked').value;
+                const editingId = expenseForm.dataset.editingId;
+                
+                if (editingId) {
+                    // Edita despesa existente
+                    const expenseIndex = expenses.findIndex(expense => expense.id === parseInt(editingId));
+                    if (expenseIndex !== -1) {
+                        expenses[expenseIndex] = {
+                            ...expenses[expenseIndex],
+                            description,
+                            amount,
+                            dueDate,
+                            status
+                        };
+                        
+                        saveExpenses();
+                        updateUI();
+                        
+                        // Remove modo de edição
+                        delete expenseForm.dataset.editingId;
+                        document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-plus mr-2"></i> Adicionar Despesa';
+                        
+                        // Feedback
+                        showFeedback('Despesa atualizada com sucesso!', 'green-500', 'fa-check-circle');
+                    }
+                } else {
+                    // Adiciona nova despesa
+                    const newExpense = {
+                        id: Date.now(),
+                        description,
+                        amount,
+                        dueDate,
+                        status,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    expenses.push(newExpense);
+                    saveExpenses();
+                    updateUI();
+                    
+                    // Feedback
+                    showFeedback('Despesa adicionada com sucesso!', 'green-500', 'fa-check-circle');
+                }
+                
+                // Limpa o formulário
+                expenseForm.reset();
+                document.getElementById('description').focus();
+            });
+            
+            // Filtra as despesas
+            searchInput.addEventListener('input', updateUI);
+            statusFilter.addEventListener('change', updateUI);
+            monthFilter.addEventListener('change', updateUI);
+            
+            // Salva as despesas no armazenamento local
+            function saveExpenses() {
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+            }
+            
+            // Atualiza a interface com base nas despesas e filtros
+            function updateUI() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusFilterValue = statusFilter.value;
+                const monthFilterValue = monthFilter.value;
+                
+                // Filtra as despesas
+                let filteredExpenses = expenses.filter(expense => {
+                    const matchesSearch = expense.description.toLowerCase().includes(searchTerm);
+                    const matchesStatus = statusFilterValue === 'todos' || expense.status === statusFilterValue;
+                    
+                    if (monthFilterValue === 'todos') {
+                        return matchesSearch && matchesStatus;
+                    }
+                    
+                    const dueDate = new Date(expense.dueDate);
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+                    
+                    if (monthFilterValue === 'atual') {
+                        return matchesSearch && matchesStatus && 
+                               dueDate.getMonth() === currentMonth && 
+                               dueDate.getFullYear() === currentYear;
+                    }
+                    
+                    return matchesSearch && matchesStatus;
+                });
+                
+                // Ordena por data de vencimento
+                filteredExpenses.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                
+                // Atualiza a lista de despesas
+                renderExpensesList(filteredExpenses);
+                
+                // Atualiza os totais
+                updateTotals();
+            }
+            
+            // Renderiza a lista de despesas
+            function renderExpensesList(expensesToRender) {
+                if (expensesToRender.length === 0) {
+                    expensesList.innerHTML = '<div class="p-4 text-center text-gray-500">Nenhuma despesa encontrada.</div>';
+                    return;
+                }
+                
+                expensesList.innerHTML = '';
+                
+                expensesToRender.forEach(expense => {
+                    const expenseElement = document.createElement('div');
+                    expenseElement.className = 'p-4 hover:bg-gray-50 transition-colors fade-in';
+                    expenseElement.dataset.id = expense.id;
+                    
+                    const dueDate = new Date(expense.dueDate + 'T00:00:00'); // Adiciona horário para evitar problemas de fuso
+                    const formattedDate = dueDate.toLocaleDateString('pt-BR', {
+                        timeZone: 'UTC' // Garante que a data será exibida corretamente
+                    });
+                    
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Remove a hora para comparar apenas a data
+                    const isOverdue = expense.status === 'pendente' && dueDate < today && !isSameDay(dueDate, today);
+                    
+                    expenseElement.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${expense.status === 'pago' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                    <i class="fas ${expense.status === 'pago' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium ${isOverdue ? 'text-red-600' : 'text-gray-900'}">${expense.description}</h4>
+                                    <p class="text-sm text-gray-500">Vencimento: ${formattedDate} 
+                                        ${isOverdue ? 
+                                            `<span class="text-red-500 ml-2">(Atrasada ${Math.floor((new Date() - dueDate) / (1000 * 60 * 60 * 24))} ${Math.floor((new Date() - dueDate) / (1000 * 60 * 60 * 24)) === 1 ? 'dia' : 'dias'})</span>` : 
+                                            isSameDay(dueDate, new Date()) ? 
+                                            '<span class="text-yellow-600 ml-2">(Vence Hoje)</span>' : 
+                                            `<span class="text-blue-600 ml-2">(Vence em ${Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24))} ${Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24)) === 1 ? 'dia' : 'dias'})</span>`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="font-semibold">R$ ${expense.amount.toFixed(2).replace('.', ',')}</span>
+                                <div class="flex space-x-2">
+                                    <button class="edit-expense p-2 rounded-full hover:bg-gray-200 transition-colors" title="Editar">
+                                        <i class="fas fa-edit text-blue-600"></i>
+                                    </button>
+                                    <button class="toggle-status p-2 rounded-full hover:bg-gray-200 transition-colors" title="${expense.status === 'pago' ? 'Marcar como pendente' : 'Marcar como pago'}">
+                                        <i class="fas ${expense.status === 'pago' ? 'fa-undo text-yellow-600' : 'fa-check text-green-600'}"></i>
+                                    </button>
+                                    <button class="delete-expense p-2 rounded-full hover:bg-gray-200 transition-colors" title="Excluir">
+                                        <i class="fas fa-trash text-red-600"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    expensesList.appendChild(expenseElement);
+                });
+                
+                // Adiciona event listeners para os botões
+                document.querySelectorAll('.toggle-status').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const expenseId = parseInt(this.closest('[data-id]').dataset.id);
+                        toggleExpenseStatus(expenseId);
+                    });
+                });
+                
+                document.querySelectorAll('.edit-expense').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const expenseId = parseInt(this.closest('[data-id]').dataset.id);
+                        editExpense(expenseId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-expense').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const expenseId = parseInt(this.closest('[data-id]').dataset.id);
+                        deleteExpense(expenseId);
+                    });
+                });
+            }
+            
+            // Atualiza os totais
+            function updateTotals() {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0); // Remove a hora para comparar apenas a data
+                
+                let totalPending = 0;
+                let totalPaid = 0;
+                let overdueCount = 0;
+                let pendingCount = 0;
+                
+                expenses.forEach(expense => {
+                    const dueDate = new Date(expense.dueDate);
+                    dueDate.setHours(0, 0, 0, 0);
+                    
+                    if (expense.status === 'pendente') {
+                        totalPending += expense.amount;
+                        
+                        if (dueDate < now) {
+                            overdueCount++;
+                        } else {
+                            pendingCount++;
+                        }
+                    } else {
+                        totalPaid += expense.amount;
+                    }
+                });
+                
+                totalPendingElement.textContent = `R$ ${totalPending.toFixed(2).replace('.', ',')}`;
+                totalPaidElement.textContent = `R$ ${totalPaid.toFixed(2).replace('.', ',')}`;
+                document.getElementById('overdueExpenses').textContent = overdueCount;
+                document.getElementById('pendingExpenses').textContent = pendingCount;
+            }
+            
+            // Alterna o status de uma despesa
+            function toggleExpenseStatus(id) {
+                const expenseIndex = expenses.findIndex(expense => expense.id === id);
+                
+                if (expenseIndex !== -1) {
+                    expenses[expenseIndex].status = expenses[expenseIndex].status === 'pago' ? 'pendente' : 'pago';
+                    saveExpenses();
+                    updateUI();
+                }
+            }
+            
+            // Edita uma despesa
+            function editExpense(id) {
+                const expense = expenses.find(expense => expense.id === id);
+                if (!expense) return;
+                
+                // Preenche o formulário
+                document.getElementById('description').value = expense.description;
+                document.getElementById('amount').value = expense.amount;
+                document.getElementById('dueDate').value = expense.dueDate;
+                document.querySelector(`input[name="status"][value="${expense.status}"]`).checked = true;
+                
+                // Ativa modo de edição
+                expenseForm.dataset.editingId = id;
+                document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save mr-2"></i> Salvar Alterações';
+                
+                // Rola até o formulário
+                document.getElementById('expenseForm').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Exclui uma despesa
+            function deleteExpense(id) {
+                if (confirm('Tem certeza que deseja excluir esta despesa?')) {
+                    expenses = expenses.filter(expense => expense.id !== id);
+                    saveExpenses();
+                    updateUI();
+                    
+                    // Mostra feedback visual
+                    const feedback = document.createElement('div');
+                    feedback.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg fade-in';
+                    feedback.innerHTML = '<i class="fas fa-trash mr-2"></i> Despesa excluída com sucesso!';
+                    document.body.appendChild(feedback);
+                    
+                    setTimeout(() => {
+                        feedback.classList.remove('fade-in');
+                        feedback.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        setTimeout(() => feedback.remove(), 300);
+                    }, 3000);
+                }
+            }
+            
+            // Verifica se duas datas são no mesmo dia
+            function isSameDay(date1, date2) {
+                const d1 = new Date(date1);
+                const d2 = new Date(date2);
+                d1.setHours(0, 0, 0, 0);
+                d2.setHours(0, 0, 0, 0);
+                return d1.getTime() === d2.getTime();
+            }
+            
+            // Define a data mínima para o campo de data como hoje
+            document.getElementById('dueDate').min = new Date().toISOString().split('T')[0];
+        });
+
+        // Função de feedback PWA (compatível com as duas versões)
+        function showFeedback(message, color, icon) {
+            const toast = document.createElement('div');
+            toast.className = `bg-${color} text-white px-4 py-2 rounded-lg shadow-lg fade-in flex items-center`;
+            toast.innerHTML = `
+                <i class="fas ${icon} mr-2"></i>
+                ${message}
+            `;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

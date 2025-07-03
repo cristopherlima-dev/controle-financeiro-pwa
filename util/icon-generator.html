@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Ícone - Controle Financeiro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        .emoji-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .emoji-btn {
+            font-size: 30px;
+            padding: 10px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .emoji-btn:hover, .emoji-btn.selected {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            transform: scale(1.1);
+        }
+        .info {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Gerador de Ícones PWA</h1>
+        <p>Clique em um emoji para gerar o ícone do seu PWA</p>
+        
+        <div class="emoji-options">
+            <div class="emoji-btn selected" data-emoji="💰">💰</div>
+            <div class="emoji-btn" data-emoji="💳">💳</div>
+            <div class="emoji-btn" data-emoji="💸">💸</div>
+            <div class="emoji-btn" data-emoji="💵">💵</div>
+            <div class="emoji-btn" data-emoji="📊">📊</div>
+            <div class="emoji-btn" data-emoji="📈">📈</div>
+            <div class="emoji-btn" data-emoji="🏦">🏦</div>
+            <div class="emoji-btn" data-emoji="💎">💎</div>
+        </div>
+        
+        <canvas id="canvas192" width="192" height="192"></canvas>
+        
+        <div>
+            <button onclick="generateIcon()">🔄 Gerar Ícone</button>
+            <button onclick="downloadIcon(192)">⬇️ Download 192x192</button>
+        </div>
+        
+        <div class="info">
+            <strong>📝 Instruções:</strong><br>
+            1. Escolha um emoji acima<br>
+            2. Clique em "Gerar Ícone"<br>
+            3. Faça download do arquivo PNG<br>
+            4. Salve como <code>src/assets/icons/icon-192x192.png</code>
+        </div>
+        
+        <canvas id="canvas512" width="512" height="512" style="display:none;"></canvas>
+    </div>
+
+    <script>
+        let selectedEmoji = '💰';
+
+        // Seleção de emoji
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelector('.emoji-btn.selected')?.classList.remove('selected');
+                this.classList.add('selected');
+                selectedEmoji = this.dataset.emoji;
+                generateIcon();
+            });
+        });
+
+        function generateIcon() {
+            // Gerar ícone 192x192
+            const canvas192 = document.getElementById('canvas192');
+            const ctx192 = canvas192.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx192.createLinearGradient(0, 0, 192, 192);
+            gradient.addColorStop(0, '#4f46e5');
+            gradient.addColorStop(1, '#7c3aed');
+            
+            // Desenhar background
+            ctx192.fillStyle = gradient;
+            ctx192.fillRect(0, 0, 192, 192);
+            
+            // Adicionar bordas arredondadas (simulação)
+            ctx192.globalCompositeOperation = 'destination-in';
+            ctx192.beginPath();
+            ctx192.roundRect(0, 0, 192, 192, 24);
+            ctx192.fill();
+            ctx192.globalCompositeOperation = 'source-over';
+            
+            // Adicionar emoji
+            ctx192.font = '120px serif';
+            ctx192.textAlign = 'center';
+            ctx192.textBaseline = 'middle';
+            ctx192.fillText(selectedEmoji, 96, 96);
+            
+            // Gerar ícone 512x512 (escondido)
+            const canvas512 = document.getElementById('canvas512');
+            const ctx512 = canvas512.getContext('2d');
+            
+            const gradient512 = ctx512.createLinearGradient(0, 0, 512, 512);
+            gradient512.addColorStop(0, '#4f46e5');
+            gradient512.addColorStop(1, '#7c3aed');
+            
+            ctx512.fillStyle = gradient512;
+            ctx512.fillRect(0, 0, 512, 512);
+            
+            ctx512.globalCompositeOperation = 'destination-in';
+            ctx512.beginPath();
+            ctx512.roundRect(0, 0, 512, 512, 64);
+            ctx512.fill();
+            ctx512.globalCompositeOperation = 'source-over';
+            
+            ctx512.font = '320px serif';
+            ctx512.textAlign = 'center';
+            ctx512.textBaseline = 'middle';
+            ctx512.fillText(selectedEmoji, 256, 256);
+        }
+
+        function downloadIcon(size) {
+            const canvas = size === 192 ? document.getElementById('canvas192') : document.getElementById('canvas512');
+            
+            // Converter para blob
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
+        // Adicionar suporte ao roundRect se não existir
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+
+        // Gerar ícone inicial
+        generateIcon();
+    </script>
+</body>
+</html>
